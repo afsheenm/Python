@@ -1,0 +1,304 @@
+#afsheen and eray brickbreaker game
+import pgzrun
+import string
+import math
+
+
+#the following code initializes the Pygame Zero game window, sets the game's title, and defines the width and height of the game window
+TITLE = "Brickbreaker"
+WIDTH = 640
+HEIGHT = 480
+BRICKS_PER_ROW = 10
+MAX_LIVES = 3
+
+#The following two lines define constants for the number of bricks in a row and the maximum number of lives the player has
+#the next three lines set up the paddle and the ball Actors and their starting positions
+paddle = Actor("paddlered.png")
+paddle.x = 320
+paddle.y = 440
+
+
+ball = Actor("ballgrey.png")
+ball.x = 320
+ball.y = 340
+#this code sets the initial speed of the ball
+ball_x_speed = 2.5
+ball_y_speed = 2.5
+
+score = 0
+lives = MAX_LIVES
+game_over = False
+
+bricks = []
+current_brick_pos_x = 64 / 2
+current_brick_pos_y = 32 / 2
+
+
+# Brick sprites are 64 by 32
+brick_sprites = ["element_green_rectangle.png", "element_yellow_rectangle.png", "element_red_rectangle.png"]
+
+
+
+def draw():
+    screen.fill((0,155,119))
+   
+    paddle.draw()
+    ball.draw()
+
+    for brick in bricks:
+        brick.draw()
+
+    screen.draw.text("Lives: " + str(lives), midtop = (WIDTH/2, 10), color = "red")
+    screen.draw.text("Score: " + str(score), midtop  = (50, 10), color = "white")
+
+    if game_over:
+        screen.draw.text("Game Over", center = (WIDTH/2, HEIGHT/2), fontsize = 60, color = "red")
+        screen.draw.text("Press R to Restart", center = (WIDTH/2, HEIGHT/2 + 50), fontsize = 30, color ="white")
+
+   
+#updates the position of the paddle to the left or right based on keyboard input,
+#while ensuring that the paddle does not move beyond the left or right boundary of the game screen
+def update_paddle():
+        if keyboard.left:
+            if(paddle.x - 4 > 0 + 48):
+                paddle.x = paddle.x - 4
+        if keyboard.right:
+            if(paddle.x + 4 < 640 -48):
+                paddle.x = paddle.x +4
+ 
+
+#The function checks if the ball has hit the left or right side of the screen, and if so, changes speed to move it in the opposite direction
+#if the ball hits the bottom of the screen, the player loses a life, and it they have no lives left, the game is over. otherwise the ball is set to its starting position
+#if the ball collides with a brick, the brick is removed and the player's score is increased
+def update_ball():
+    global ball_x_speed
+    global ball_y_speed
+    global score
+    global lives
+    global game_over
+
+    ball.x = ball.x - ball_x_speed
+    ball.y = ball.y - ball_y_speed
+
+    if(ball.x > WIDTH -12) or (ball.x < 0 +12):
+        ball_x_speed = ball_x_speed * -1
+    if(ball.y > HEIGHT -12):
+        ball_y_speed = ball_y_speed * -1
+    if ball.y > HEIGHT - 12:
+        lives -= 1
+        if lives == 0:
+            game_over = True
+        else:
+            reset_ball()
+
+    if ball.colliderect(paddle):
+        ball_y_speed = ball_y_speed * -1
+
+    for brick in bricks:
+        if ball.colliderect(brick):
+            bricks.remove(brick)
+            score += 1
+            ball_y_speed = ball_y_speed * -1
+
+    if len(bricks) == 0:
+        game_over = True
+     
+
+def reset_ball():
+    global ball_x_speed
+    global ball_y_speed
+    ball.pos = (320, 340)
+    ball_x_speed = 2.5
+    ball_y_speed = 2.5
+
+# Resets the position and speed of the ball to their initial values.
+def generate_bricks():
+    global bricks
+    bricks = []
+    current_brick_pos_y = 32 / 2
+    for brick_sprite in brick_sprites:
+        place_brick_row(brick_sprite, current_brick_pos_x, current_brick_pos_y)
+        current_brick_pos_y += 32
+
+#The place_brick_row function places a row of bricks on the game screen with a given sprite, starting x and y positions, and number of bricks per row
+def place_brick_row(sprite, pos_x, pos_y):
+    for i in range(BRICKS_PER_ROW):
+        brick = Actor(sprite)
+        brick.x = pos_x + i * 64
+        brick.y = pos_y 
+        bricks.append(brick)
+
+#This code generates a new set of bricks for the game by clearing the existing bricks and then calling a function to place a row of bricks for each type of brick sprite.
+def generate_bricks():
+    global bricks
+    bricks.clear()
+    current_brick_pos_y = 32 / 2
+    for brick_sprite in brick_sprites:
+        place_brick_row(brick_sprite, current_brick_pos_x, current_brick_pos_y)
+        current_brick_pos_y += 32
+
+#The code defines a function called reset_ball() that resets the position of the ball to the center of the 
+#screen and sets its horizontal and vertical speeds to their initial values 
+def reset_ball():
+    global ball_x_speed, ball_y_speed
+    ball.x = WIDTH / 2
+    ball.y = HEIGHT / 2
+    ball_x_speed = 2.5
+    ball_y_speed = 2.5
+
+#This code sets maximum lives to 3
+MAX_LIVES = 3
+lives = MAX_LIVES
+game_over = False
+
+
+#draws the player's remaining lives on the screen as hearts
+def draw_lives():
+    for i in range(lives):
+        heart = Actor('heart.png')
+        heart.pos = (WIDTH - 30 - i * 30, 400)
+        heart.draw()
+
+#draws the players score on screen as the ball hits the bricks
+def draw_score():
+    global score
+    screen.draw.text("Score: " + str(score), (500, 100), color='white', fontsize=30)
+
+#draws "Game Over" on the screen when the lives are over
+def draw_game_over():
+    screen.draw.text("Game Over!", center=(WIDTH/2, HEIGHT/2), color='white', fontsize=60)
+
+#The code updates the paddle and ball position while checking for game over conditions,
+#  and resets the ball and updates the lives if the ball goes below the screen.
+def update():
+    global game_over
+    if not game_over:
+        update_paddle()
+        update_ball()
+
+    if ball.y > HEIGHT:
+        lives = lives - 1
+        if lives <= 0:
+            game_over = True
+        else:
+            reset_ball()
+
+#This function handles key down events, and if the game is over and the key pressed is "R", it resets the game variables and generates new bricks
+def on_key_down(key):
+    global lives, score, game_over
+    if game_over and key == keys.R:
+        paddle.midbottom = (WIDTH/2, HEIGHT-10)
+        reset_ball()
+        generate_bricks()
+        lives = MAX_LIVES
+        score = 0
+        game_over = False
+
+#draws a leaderboardon the screen
+def draw_leaderboard():
+    leaderboard = [10, 8, 6, 4, 2]
+    y = 250
+    screen.draw.text("Leaderboard:", (20, y), color='white', fontsize=30)
+    for score in leaderboard:
+        y += 30
+        screen.draw.text(str(score), (20, y), color='white', fontsize=20)
+
+
+#The draw() function draws the game elements, including the paddle, ball, 
+# bricks, lives, score, game over message, and leaderboard; and sets the play time to 2 minutes.
+def draw():
+    screen.fill((0, 155, 119))
+    paddle.draw()
+    ball.draw()
+    draw_lives()
+    draw_score()
+
+    for brick in bricks:
+        brick.draw()
+
+    if game_over:
+        draw_game_over()
+        draw_leaderboard()
+
+import time
+
+play_time = 120  # 2 minutes
+
+#The code updates the paddle and ball movements
+def update():
+    global game_over, play_time
+    if not game_over:
+        update_paddle()
+        update_ball()
+        play_time -= 0
+        if play_time == 0:
+            game_over = True
+import random
+
+#resets the ball's position to the center of the screen
+def reset_ball():
+    global ball_x_speed, ball_y_speed
+    ball.x = WIDTH / 2
+    ball.y = HEIGHT / 2
+    ball_x_speed = 2.5 * random.choice([-1, 1])
+    ball_y_speed = 2.5
+
+#this code  updates the x position of the paddle based on the mouse position, with some boundary checks to keep it within the screen
+def on_mouse_move(pos):
+    global paddle
+    paddle.x = pos[0]
+    if paddle.x < 48:
+        paddle.x = 48
+    elif paddle.x > WIDTH - 48:
+        paddle.x = WIDTH - 48
+
+ball_speed = 3
+hits = 0
+
+#This code updates the position of the ball in the game by changing its x and y coordinates based on its speed,
+#  and handles collisions with the game boundaries, paddle, and bricks
+def update_ball():
+    global ball_x_speed
+    global ball_y_speed
+    global score
+    global lives
+    global game_over
+    global hits
+    global ball_speed
+
+    ball.x = ball.x - ball_x_speed
+    ball.y = ball.y - ball_y_speed
+
+    if(ball.x > WIDTH -12) or (ball.x < 0 +12):
+        ball_x_speed = ball_x_speed * -1
+    if(ball.y > HEIGHT -12):
+        ball_y_speed = ball_y_speed * -1
+    if ball.y > HEIGHT - 12:
+        lives -= 1
+        if lives == 0:
+            game_over = True
+        else:
+            reset_ball()
+
+    if ball.colliderect(paddle):
+        ball_y_speed = ball_y_speed * -1
+        hits += 1
+
+ #checks if the game is over by checking if all bricks have been removed 
+    for brick in bricks:
+        if ball.colliderect(brick):
+            bricks.remove(brick)
+            score += 1
+            ball_y_speed = ball_y_speed * -1
+            hits += 1
+
+    if len(bricks) == 0:
+        game_over = True
+ #If the player hits the ball 5 times, the ball speed is increased
+    if hits == 5:
+        ball_speed += 1
+        ball_x_speed *= 1.7
+        ball_y_speed *= 1.7
+        hits = 0
+
+pgzrun.go()
